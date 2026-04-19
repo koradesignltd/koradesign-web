@@ -15,10 +15,18 @@ export interface CartItem {
   quantity: number;
 }
 
+export interface AppliedCoupon {
+  code: string;
+  discount_frw: number;
+}
+
 interface CartContextValue {
   items: CartItem[];
   count: number;
+  subtotal: number;
   total: number;
+  coupon: AppliedCoupon | null;
+  setCoupon: (c: AppliedCoupon | null) => void;
   add: (item: Omit<CartItem, "quantity">, qty?: number) => void;
   remove: (id: string) => void;
   setQuantity: (id: string, qty: number) => void;
@@ -29,9 +37,11 @@ interface CartContextValue {
 
 const CartContext = createContext<CartContextValue | undefined>(undefined);
 const STORAGE_KEY = "kora-cart-v1";
+const COUPON_KEY = "kora-coupon-v1";
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
+  const [coupon, setCouponState] = useState<AppliedCoupon | null>(null);
   const [isOpen, setOpen] = useState(false);
   const [hydrated, setHydrated] = useState(false);
 
@@ -39,6 +49,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) setItems(JSON.parse(raw));
+      const c = localStorage.getItem(COUPON_KEY);
+      if (c) setCouponState(JSON.parse(c));
     } catch {
       /* noop */
     }
@@ -54,13 +66,28 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [items, hydrated]);
 
+  useEffect(() => {
+    if (!hydrated) return;
+    try {
+      if (coupon) localStorage.setItem(COUPON_KEY, JSON.stringify(coupon));
+      else localStorage.removeItem(COUPON_KEY);
+    } catch {
+      /* noop */
+    }
+  }, [coupon, hydrated]);
+
   const value = useMemo<CartContextValue>(() => {
     const count = items.reduce((s, i) => s + i.quantity, 0);
-    const total = items.reduce((s, i) => s + i.quantity * i.price_frw, 0);
+    const subtotal = items.reduce((s, i) => s + i.quantity * i.price_frw, 0);
+    const discount = coupon ? Math.min(coupon.discount_frw, subtotal) : 0;
+    const total = Math.max(0, subtotal - discount);
     return {
       items,
       count,
+      subtotal,
       total,
+      coupon,
+      setCoupon: setCouponState,
       isOpen,
       setOpen,
       add: (item, qty = 1) =>
@@ -80,9 +107,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
             ? prev.filter((p) => p.id !== id)
             : prev.map((p) => (p.id === id ? { ...p, quantity: qty } : p)),
         ),
-      clear: () => setItems([]),
+      clear: () => {
+        setItems([]);
+        setCouponState(null);
+      },
     };
-  }, [items, isOpen]);
+  }, [items, isOpen, coupon]);
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }
@@ -97,7 +127,10 @@ export function buildWhatsAppUrl(phone: string, message: string): string {
   return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
 }
 
-export function buildCartMessage(items: CartItem[]): string {
+export function buildCartMessage(
+  items: CartItem[],
+  coupon: AppliedCoupon | null = null,
+): string {
   const lines: string[] = [];
   lines.push("Hello Kora Design! I would like to order:");
   lines.push("");
@@ -109,8 +142,15 @@ export function buildCartMessage(items: CartItem[]): string {
         `   Image: ${item.image_url}`,
     );
   });
-  const total = items.reduce((s, i) => s + i.price_frw * i.quantity, 0);
+  const subtotal = items.reduce((s, i) => s + i.price_frw * i.quantity, 0);
+  const discount = coupon ? Math.min(coupon.discount_frw, subtotal) : 0;
+  const total = Math.max(0, subtotal - discount);
+
   lines.push("");
+  lines.push(`Subtotal: ${subtotal.toLocaleString("en-US")} FRW`);
+  if (coupon && discount > 0) {
+    lines.push(`Coupon (${coupon.code}): -${discount.toLocaleString("en-US")} FRW`);
+  }
   lines.push(`Total: ${total.toLocaleString("en-US")} FRW`);
   return lines.join("\n");
 }

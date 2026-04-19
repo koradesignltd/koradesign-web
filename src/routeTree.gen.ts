@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as ShopRouteImport } from './routes/shop'
 import { Route as NewRouteImport } from './routes/new'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as GalleryRouteImport } from './routes/gallery'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
@@ -30,6 +31,11 @@ const NewRoute = NewRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GalleryRoute = GalleryRouteImport.update({
+  id: '/gallery',
+  path: '/gallery',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -57,6 +63,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/admin': typeof AdminRoute
+  '/gallery': typeof GalleryRoute
   '/login': typeof LoginRoute
   '/new': typeof NewRoute
   '/shop': typeof ShopRoute
@@ -66,6 +73,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/admin': typeof AdminRoute
+  '/gallery': typeof GalleryRoute
   '/login': typeof LoginRoute
   '/new': typeof NewRoute
   '/shop': typeof ShopRoute
@@ -76,6 +84,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/admin': typeof AdminRoute
+  '/gallery': typeof GalleryRoute
   '/login': typeof LoginRoute
   '/new': typeof NewRoute
   '/shop': typeof ShopRoute
@@ -87,17 +96,27 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/admin'
+    | '/gallery'
     | '/login'
     | '/new'
     | '/shop'
     | '/product/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/about' | '/admin' | '/login' | '/new' | '/shop' | '/product/$id'
+  to:
+    | '/'
+    | '/about'
+    | '/admin'
+    | '/gallery'
+    | '/login'
+    | '/new'
+    | '/shop'
+    | '/product/$id'
   id:
     | '__root__'
     | '/'
     | '/about'
     | '/admin'
+    | '/gallery'
     | '/login'
     | '/new'
     | '/shop'
@@ -108,6 +127,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
   AdminRoute: typeof AdminRoute
+  GalleryRoute: typeof GalleryRoute
   LoginRoute: typeof LoginRoute
   NewRoute: typeof NewRoute
   ShopRoute: typeof ShopRoute
@@ -135,6 +155,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/gallery': {
+      id: '/gallery'
+      path: '/gallery'
+      fullPath: '/gallery'
+      preLoaderRoute: typeof GalleryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -172,6 +199,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   AdminRoute: AdminRoute,
+  GalleryRoute: GalleryRoute,
   LoginRoute: LoginRoute,
   NewRoute: NewRoute,
   ShopRoute: ShopRoute,

@@ -1,4 +1,10 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import { AuthProvider } from "@/lib/auth";
+import { CartProvider } from "@/lib/cart";
+import { SiteHeader } from "@/components/SiteHeader";
+import { SiteFooter } from "@/components/SiteFooter";
+import { CartDrawer } from "@/components/CartDrawer";
+import { Toaster } from "@/components/ui/sonner";
 
 import appCss from "../styles.css?url";
 
@@ -31,22 +37,16 @@ export const Route = createRootRoute({
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Kora Design - Online Laser Art Crafts Shop in Kigali Rwanda" },
       { name: "description", content: "Discover our collection of precision laser-cut wall art designed for modern spaces. in Rrwanda kigali and World Wide" },
-      { name: "author", content: "Lovable" },
+      { name: "author", content: "Kora Design" },
       { property: "og:title", content: "Kora Design - Online Laser Art Crafts Shop in Kigali Rwanda" },
       { property: "og:description", content: "Discover our collection of precision laser-cut wall art designed for modern spaces. in Rrwanda kigali and World Wide" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
       { name: "twitter:title", content: "Kora Design - Online Laser Art Crafts Shop in Kigali Rwanda" },
       { name: "twitter:description", content: "Discover our collection of precision laser-cut wall art designed for modern spaces. in Rrwanda kigali and World Wide" },
-      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/PkRZnAVzQ1NiLk1L49YI970ZgZ52/social-images/social-1776475813972-kora_design.webp" },
-      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/PkRZnAVzQ1NiLk1L49YI970ZgZ52/social-images/social-1776475813972-kora_design.webp" },
     ],
     links: [
-      {
-        rel: "stylesheet",
-        href: appCss,
-      },
+      { rel: "stylesheet", href: appCss },
     ],
   }),
   shellComponent: RootShell,
@@ -69,5 +69,19 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
-  return <Outlet />;
+  return (
+    <AuthProvider>
+      <CartProvider>
+        <div className="flex min-h-screen flex-col">
+          <SiteHeader />
+          <main className="flex-1">
+            <Outlet />
+          </main>
+          <SiteFooter />
+        </div>
+        <CartDrawer />
+        <Toaster />
+      </CartProvider>
+    </AuthProvider>
+  );
 }
