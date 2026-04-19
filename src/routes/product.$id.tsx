@@ -25,6 +25,7 @@ function ProductPage() {
   const { add, setOpen } = useCart();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
+  const [activeImage, setActiveImage] = useState<string>("");
 
   useEffect(() => {
     void supabase
@@ -34,6 +35,7 @@ function ProductPage() {
       .maybeSingle()
       .then(({ data }) => {
         setProduct(data);
+        if (data) setActiveImage(data.image_url);
         setLoading(false);
       });
   }, [id]);
@@ -44,6 +46,9 @@ function ProductPage() {
   if (!product) {
     throw notFound();
   }
+
+  const extraImages = (product as Product & { image_urls?: string[] }).image_urls ?? [];
+  const allImages = [product.image_url, ...extraImages.filter((u) => u && u !== product.image_url)];
 
   function buyNow() {
     if (!product) return;
