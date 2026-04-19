@@ -219,31 +219,65 @@ export function AdminProducts() {
                   onChange={(e) => setEditing({ ...editing, description: e.target.value })} />
               </div>
 
-              <div className="space-y-1.5">
-                <Label>Image</Label>
-                {editing.image_url ? (
-                  <div className="relative inline-block">
-                    <img src={editing.image_url} alt="" className="h-32 w-32 rounded-md object-cover" />
-                    <button onClick={() => setEditing({ ...editing, image_url: "" })}
-                      className="absolute -right-2 -top-2 rounded-full bg-background border border-border p-1">
-                      <X className="h-3 w-3" />
-                    </button>
-                  </div>
-                ) : (
-                  <label className="flex h-32 w-32 cursor-pointer items-center justify-center rounded-md border-2 border-dashed border-border hover:bg-accent">
-                    <input type="file" accept="image/*" className="hidden"
-                      onChange={async (e) => {
-                        const f = e.target.files?.[0];
-                        if (!f) return;
-                        const url = await handleUpload(f);
-                        if (url) setEditing({ ...editing, image_url: url });
-                      }} />
-                    <div className="text-center text-xs text-muted-foreground">
-                      <Upload className="mx-auto mb-1 h-5 w-5" />
-                      {uploading ? "Uploading…" : "Upload"}
+              <div className="space-y-2">
+                <Label>Images <span className="text-xs font-normal text-muted-foreground">(cover + up to {MAX_IMAGES - 1} more, {MAX_IMAGES} max)</span></Label>
+                <div className="flex flex-wrap gap-3">
+                  {editing.image_url && (
+                    <div className="relative">
+                      <img src={editing.image_url} alt="" className="h-24 w-24 rounded-md object-cover ring-2 ring-primary" />
+                      <span className="absolute bottom-1 left-1 rounded bg-primary px-1.5 py-0.5 text-[10px] font-medium text-primary-foreground">Cover</span>
+                      <button type="button" onClick={() => {
+                        const [next, ...rest] = editing.image_urls;
+                        setEditing({ ...editing, image_url: next ?? "", image_urls: rest });
+                      }} className="absolute -right-2 -top-2 rounded-full border border-border bg-background p-1">
+                        <X className="h-3 w-3" />
+                      </button>
                     </div>
-                  </label>
-                )}
+                  )}
+                  {editing.image_urls.map((url, i) => (
+                    <div key={`${url}-${i}`} className="relative">
+                      <img src={url} alt="" className="h-24 w-24 rounded-md object-cover" />
+                      <button type="button" onClick={() => setEditing({
+                        ...editing,
+                        image_urls: editing.image_urls.filter((_, idx) => idx !== i),
+                      })} className="absolute -right-2 -top-2 rounded-full border border-border bg-background p-1">
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                  {(editing.image_url ? 1 : 0) + editing.image_urls.length < MAX_IMAGES && (
+                    <label className="flex h-24 w-24 cursor-pointer items-center justify-center rounded-md border-2 border-dashed border-border hover:bg-accent">
+                      <input type="file" accept="image/*" multiple className="hidden"
+                        onChange={async (e) => {
+                          const files = Array.from(e.target.files ?? []);
+                          e.target.value = "";
+                          if (files.length === 0) return;
+                          const used = (editing.image_url ? 1 : 0) + editing.image_urls.length;
+                          const remaining = MAX_IMAGES - used;
+                          const toUpload = files.slice(0, remaining);
+                          const uploaded: string[] = [];
+                          for (const f of toUpload) {
+                            const url = await handleUpload(f);
+                            if (url) uploaded.push(url);
+                          }
+                          if (uploaded.length === 0) return;
+                          setEditing((prev) => {
+                            if (!prev) return prev;
+                            const next = { ...prev };
+                            const queue = [...uploaded];
+                            if (!next.image_url && queue.length > 0) next.image_url = queue.shift()!;
+                            next.image_urls = [...prev.image_urls, ...queue];
+                            return next;
+                          });
+                        }} />
+                      <div className="text-center text-xs text-muted-foreground">
+                        <Upload className="mx-auto mb-1 h-5 w-5" />
+                        {uploading ? "Uploading…" : "Add"}
+                      </div>
+                    </label>
+                  )}
+                </div>
+              </div>
               </div>
 
               <div className="flex justify-end gap-2 pt-2">
