@@ -13,7 +13,7 @@ function TiktokIcon(props: React.SVGProps<SVGSVGElement>) {
 export interface Social {
   label: string;
   href: string;
-  Icon: LucideIcon | ((p: React.SVGProps<SVGSVGElement>) => JSX.Element);
+  Icon: LucideIcon | React.ComponentType<React.SVGProps<SVGSVGElement>>;
 }
 
 export const SOCIALS: Social[] = [
