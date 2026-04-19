@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface GalleryImage {
   id: string;
@@ -23,6 +25,7 @@ export const Route = createFileRoute("/gallery")({
 function GalleryPage() {
   const [images, setImages] = useState<GalleryImage[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
   useEffect(() => {
     void supabase
@@ -35,6 +38,18 @@ function GalleryPage() {
         setLoading(false);
       });
   }, []);
+
+  useEffect(() => {
+    if (activeIndex === null) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "ArrowRight") setActiveIndex((i) => (i === null ? i : (i + 1) % images.length));
+      else if (e.key === "ArrowLeft") setActiveIndex((i) => (i === null ? i : (i - 1 + images.length) % images.length));
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [activeIndex, images.length]);
+
+  const active = activeIndex !== null ? images[activeIndex] : null;
 
   return (
     <div className="container-page py-12 md:py-16">
@@ -50,10 +65,11 @@ function GalleryPage() {
         <p className="py-20 text-center text-muted-foreground">No photos yet — check back soon.</p>
       ) : (
         <div className="columns-2 gap-4 md:columns-3 lg:columns-4 [column-fill:_balance]">
-          {images.map((img) => (
+          {images.map((img, idx) => (
             <figure
               key={img.id}
-              className="mb-4 break-inside-avoid overflow-hidden rounded-2xl border border-border bg-card"
+              className="mb-4 break-inside-avoid overflow-hidden rounded-2xl border border-border bg-card cursor-zoom-in"
+              onClick={() => setActiveIndex(idx)}
             >
               <img
                 src={img.image_url}
@@ -68,6 +84,44 @@ function GalleryPage() {
           ))}
         </div>
       )}
+
+      <Dialog open={activeIndex !== null} onOpenChange={(open) => !open && setActiveIndex(null)}>
+        <DialogContent className="max-w-5xl border-none bg-transparent p-0 shadow-none sm:rounded-none">
+          <DialogTitle className="sr-only">{active?.caption ?? "Gallery image"}</DialogTitle>
+          {active && (
+            <div className="relative flex flex-col items-center">
+              <img
+                src={active.image_url}
+                alt={active.caption ?? "Kora Design gallery photo"}
+                className="max-h-[85vh] w-auto rounded-lg object-contain"
+              />
+              {active.caption && (
+                <p className="mt-3 text-center text-sm text-white/90">{active.caption}</p>
+              )}
+              {images.length > 1 && (
+                <>
+                  <button
+                    type="button"
+                    aria-label="Previous"
+                    onClick={(e) => { e.stopPropagation(); setActiveIndex((i) => (i === null ? i : (i - 1 + images.length) % images.length)); }}
+                    className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white hover:bg-black/70"
+                  >
+                    <ChevronLeft className="h-6 w-6" />
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Next"
+                    onClick={(e) => { e.stopPropagation(); setActiveIndex((i) => (i === null ? i : (i + 1) % images.length)); }}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white hover:bg-black/70"
+                  >
+                    <ChevronRight className="h-6 w-6" />
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
