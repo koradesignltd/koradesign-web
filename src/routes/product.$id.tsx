@@ -25,6 +25,7 @@ function ProductPage() {
   const { add, setOpen } = useCart();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
+  const [activeImage, setActiveImage] = useState<string>("");
 
   useEffect(() => {
     void supabase
@@ -34,6 +35,7 @@ function ProductPage() {
       .maybeSingle()
       .then(({ data }) => {
         setProduct(data);
+        if (data) setActiveImage(data.image_url);
         setLoading(false);
       });
   }, [id]);
@@ -44,6 +46,9 @@ function ProductPage() {
   if (!product) {
     throw notFound();
   }
+
+  const extraImages = (product as Product & { image_urls?: string[] }).image_urls ?? [];
+  const allImages = [product.image_url, ...extraImages.filter((u) => u && u !== product.image_url)];
 
   function buyNow() {
     if (!product) return;
@@ -72,12 +77,30 @@ function ProductPage() {
       </button>
 
       <div className="grid gap-10 md:grid-cols-2">
-        <div className="overflow-hidden rounded-2xl border border-border bg-muted">
-          <img
-            src={product.image_url}
-            alt={product.name}
-            className="aspect-square w-full object-cover"
-          />
+        <div>
+          <div className="overflow-hidden rounded-2xl border border-border bg-muted">
+            <img
+              src={activeImage || product.image_url}
+              alt={product.name}
+              className="aspect-square w-full object-cover"
+            />
+          </div>
+          {allImages.length > 1 && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {allImages.map((url) => (
+                <button
+                  key={url}
+                  type="button"
+                  onClick={() => setActiveImage(url)}
+                  className={`overflow-hidden rounded-md border-2 transition ${
+                    (activeImage || product.image_url) === url ? "border-primary" : "border-transparent hover:border-border"
+                  }`}
+                >
+                  <img src={url} alt="" className="h-16 w-16 object-cover" />
+                </button>
+              ))}
+            </div>
+          )}
         </div>
         <div className="flex flex-col">
           <p className="text-xs font-medium uppercase tracking-wider text-primary">
