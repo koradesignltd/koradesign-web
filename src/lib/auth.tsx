@@ -81,6 +81,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth() {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be inside AuthProvider");
+  if (!ctx) {
+    // Safe fallback for SSR / when provider isn't mounted yet
+    return {
+      user: null,
+      session: null,
+      isAdmin: false,
+      loading: true,
+      signOut: async () => {},
+    } as const;
+  }
   return ctx;
 }
