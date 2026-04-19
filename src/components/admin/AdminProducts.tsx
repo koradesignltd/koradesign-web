@@ -83,6 +83,7 @@ export function AdminProducts() {
         price_frw: Math.max(0, Math.floor(editing.price_frw)),
         category: editing.category,
         image_url: editing.image_url,
+        image_urls: editing.image_urls,
         is_new: editing.is_new,
         active: editing.active,
       };
