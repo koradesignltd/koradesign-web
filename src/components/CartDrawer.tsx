@@ -1,18 +1,59 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Trash2, Plus, Minus, MessageCircle } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Trash2, Plus, Minus, MessageCircle, Tag, X } from "lucide-react";
+import { useState } from "react";
 import { buildCartMessage, buildWhatsAppUrl, useCart } from "@/lib/cart";
 import { formatFRW, WHATSAPP_NUMBER } from "@/lib/format";
 import { Link } from "@tanstack/react-router";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export function CartDrawer() {
-  const { items, isOpen, setOpen, total, setQuantity, remove, clear } = useCart();
+  const {
+    items, isOpen, setOpen, subtotal, total, setQuantity, remove, clear,
+    coupon, setCoupon,
+  } = useCart();
+  const [code, setCode] = useState("");
+  const [applying, setApplying] = useState(false);
+
+  async function applyCoupon() {
+    const trimmed = code.trim();
+    if (!trimmed) return;
+    setApplying(true);
+    try {
+      const { data, error } = await supabase
+        .from("coupons")
+        .select("code, discount_frw, active, expires_at")
+        .ilike("code", trimmed)
+        .eq("active", true)
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) {
+        toast.error("Coupon not found or inactive");
+        return;
+      }
+      if (data.expires_at && new Date(data.expires_at) < new Date()) {
+        toast.error("This coupon has expired");
+        return;
+      }
+      setCoupon({ code: data.code, discount_frw: data.discount_frw });
+      setCode("");
+      toast.success(`Coupon applied: -${formatFRW(data.discount_frw)}`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not apply coupon");
+    } finally {
+      setApplying(false);
+    }
+  }
 
   function checkout() {
     if (items.length === 0) return;
-    const url = buildWhatsAppUrl(WHATSAPP_NUMBER, buildCartMessage(items));
+    const url = buildWhatsAppUrl(WHATSAPP_NUMBER, buildCartMessage(items, coupon));
     window.open(url, "_blank", "noopener,noreferrer");
   }
+
+  const discount = subtotal - total;
 
   return (
     <Sheet open={isOpen} onOpenChange={setOpen}>
@@ -81,11 +122,55 @@ export function CartDrawer() {
             </div>
 
             <div className="border-t border-border bg-card px-5 py-4">
-              <div className="mb-3 flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Total</span>
-                <span className="text-lg font-semibold">{formatFRW(total)}</span>
+              {/* Coupon */}
+              {coupon ? (
+                <div className="mb-3 flex items-center justify-between rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-sm">
+                  <span className="flex items-center gap-2">
+                    <Tag className="h-4 w-4 text-primary" />
+                    <span className="font-medium">{coupon.code}</span>
+                    <span className="text-muted-foreground">-{formatFRW(coupon.discount_frw)}</span>
+                  </span>
+                  <button
+                    onClick={() => setCoupon(null)}
+                    aria-label="Remove coupon"
+                    className="text-muted-foreground hover:text-destructive"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <div className="mb-3 flex gap-2">
+                  <Input
+                    value={code}
+                    onChange={(e) => setCode(e.target.value)}
+                    placeholder="Coupon code"
+                    className="h-9"
+                    onKeyDown={(e) => e.key === "Enter" && void applyCoupon()}
+                  />
+                  <Button size="sm" variant="outline" onClick={() => void applyCoupon()} disabled={applying || !code.trim()}>
+                    Apply
+                  </Button>
+                </div>
+              )}
+
+              <div className="space-y-1 text-sm">
+                <div className="flex items-center justify-between text-muted-foreground">
+                  <span>Subtotal</span>
+                  <span>{formatFRW(subtotal)}</span>
+                </div>
+                {discount > 0 && (
+                  <div className="flex items-center justify-between text-primary">
+                    <span>Discount</span>
+                    <span>-{formatFRW(discount)}</span>
+                  </div>
+                )}
+                <div className="flex items-center justify-between pt-1 text-base font-semibold">
+                  <span>Total</span>
+                  <span>{formatFRW(total)}</span>
+                </div>
               </div>
-              <Button onClick={checkout} className="w-full" size="lg">
+
+              <Button onClick={checkout} className="mt-3 w-full" size="lg">
                 <MessageCircle className="mr-2 h-4 w-4" />
                 Checkout via WhatsApp
               </Button>
