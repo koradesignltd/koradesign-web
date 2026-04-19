@@ -17,6 +17,8 @@ import type { Database } from "@/integrations/supabase/types";
 
 type Product = Database["public"]["Tables"]["products"]["Row"];
 
+const MAX_IMAGES = 5;
+
 interface FormState {
   id?: string;
   name: string;
@@ -24,13 +26,14 @@ interface FormState {
   price_frw: number;
   category: string;
   image_url: string;
+  image_urls: string[];
   is_new: boolean;
   active: boolean;
 }
 
 const EMPTY: FormState = {
   name: "", description: "", price_frw: 15000,
-  category: CATEGORIES[0], image_url: "", is_new: true, active: true,
+  category: CATEGORIES[0], image_url: "", image_urls: [], is_new: true, active: true,
 };
 
 export function AdminProducts() {
