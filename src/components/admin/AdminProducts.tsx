@@ -195,6 +195,7 @@ export function AdminProducts() {
                     <Button size="sm" variant="ghost" onClick={() => setEditing({
                       id: p.id, name: p.name, description: p.description ?? "",
                       price_frw: p.price_frw, category: p.category, image_url: p.image_url,
+                      categories: (p.categories && p.categories.length > 0) ? p.categories : [p.category],
                       image_urls: (p as Product & { image_urls?: string[] }).image_urls ?? [],
                       is_new: p.is_new, active: p.active,
                     })}>
