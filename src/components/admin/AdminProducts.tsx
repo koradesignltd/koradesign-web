@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Pencil, Plus, Trash2, Upload, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Pencil, Plus, Search, Trash2, Upload, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +15,9 @@ import { CATEGORIES, formatFRW } from "@/lib/format";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 
-type Product = Database["public"]["Tables"]["products"]["Row"];
+type Product = Database["public"]["Tables"]["products"]["Row"] & {
+  categories?: string[];
+};
 
 const MAX_IMAGES = 5;
 
@@ -25,6 +27,7 @@ interface FormState {
   description: string;
   price_frw: number;
   category: string;
+  categories: string[];
   image_url: string;
   image_urls: string[];
   is_new: boolean;
@@ -33,7 +36,8 @@ interface FormState {
 
 const EMPTY: FormState = {
   name: "", description: "", price_frw: 15000,
-  category: CATEGORIES[0], image_url: "", image_urls: [], is_new: true, active: true,
+  category: CATEGORIES[0], categories: [CATEGORIES[0]],
+  image_url: "", image_urls: [], is_new: true, active: true,
 };
 
 export function AdminProducts() {
@@ -41,6 +45,37 @@ export function AdminProducts() {
   const [editing, setEditing] = useState<FormState | null>(null);
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [filterQuery, setFilterQuery] = useState("");
+  const [filterCategory, setFilterCategory] = useState<string>("all");
+  const [filterStatus, setFilterStatus] = useState<"all" | "active" | "inactive" | "new">("all");
+  const [newCategory, setNewCategory] = useState("");
+
+  const allCategoryOptions = useMemo(() => {
+    const set = new Set<string>(CATEGORIES);
+    products.forEach((p) => {
+      (p.categories ?? []).forEach((c) => set.add(c));
+      if (p.category) set.add(p.category);
+    });
+    return Array.from(set);
+  }, [products]);
+
+  const filteredProducts = useMemo(() => {
+    const q = filterQuery.trim().toLowerCase();
+    return products.filter((p) => {
+      if (filterStatus === "active" && !p.active) return false;
+      if (filterStatus === "inactive" && p.active) return false;
+      if (filterStatus === "new" && !p.is_new) return false;
+      if (filterCategory !== "all") {
+        const cats = p.categories ?? [];
+        if (p.category !== filterCategory && !cats.includes(filterCategory)) return false;
+      }
+      if (q) {
+        const hay = `${p.name} ${p.description ?? ""} ${p.category} ${(p.categories ?? []).join(" ")}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [products, filterQuery, filterCategory, filterStatus]);
 
   async function load() {
     const { data, error } = await supabase
@@ -81,7 +116,8 @@ export function AdminProducts() {
         name: editing.name.trim(),
         description: editing.description.trim() || null,
         price_frw: Math.max(0, Math.floor(editing.price_frw)),
-        category: editing.category,
+        category: editing.categories[0] ?? editing.category,
+        categories: editing.categories,
         image_url: editing.image_url,
         image_urls: editing.image_urls,
         is_new: editing.is_new,
@@ -121,6 +157,38 @@ export function AdminProducts() {
         </Button>
       </div>
 
+      {/* Filters */}
+      <div className="mb-4 grid gap-3 md:grid-cols-[1fr_auto_auto]">
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={filterQuery}
+            onChange={(e) => setFilterQuery(e.target.value)}
+            placeholder="Search by name, description or category…"
+            className="pl-9"
+          />
+        </div>
+        <Select value={filterCategory} onValueChange={setFilterCategory}>
+          <SelectTrigger className="md:w-48"><SelectValue placeholder="Category" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All categories</SelectItem>
+            {allCategoryOptions.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v as typeof filterStatus)}>
+          <SelectTrigger className="md:w-40"><SelectValue placeholder="Status" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All</SelectItem>
+            <SelectItem value="active">Active</SelectItem>
+            <SelectItem value="inactive">Inactive</SelectItem>
+            <SelectItem value="new">New</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <p className="mb-3 text-xs text-muted-foreground">
+        Showing {filteredProducts.length} of {products.length}
+      </p>
+
       <div className="overflow-x-auto rounded-2xl border border-border">
         <table className="w-full text-sm">
           <thead className="bg-muted/50 text-left text-xs uppercase tracking-wider text-muted-foreground">
@@ -135,14 +203,14 @@ export function AdminProducts() {
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {products.length === 0 && (
+            {filteredProducts.length === 0 && (
               <tr>
                 <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
-                  No products yet. Click "New product" to add your first one.
+                  {products.length === 0 ? 'No products yet. Click "New product" to add your first one.' : "No products match your filters."}
                 </td>
               </tr>
             )}
-            {products.map((p) => (
+            {filteredProducts.map((p) => (
               <tr key={p.id} className="hover:bg-muted/30">
                 <td className="px-4 py-2">
                   <img src={p.image_url} alt="" width={48} height={48} className="h-12 w-12 rounded-md object-cover" />
@@ -150,7 +218,9 @@ export function AdminProducts() {
                 <td className="px-4 py-2 font-medium">
                   <Link to="/product/$id" params={{ id: p.id }} className="hover:underline">{p.name}</Link>
                 </td>
-                <td className="px-4 py-2 text-muted-foreground">{p.category}</td>
+                <td className="px-4 py-2 text-muted-foreground">
+                  {(p.categories && p.categories.length > 0 ? p.categories : [p.category]).join(", ")}
+                </td>
                 <td className="px-4 py-2">{formatFRW(p.price_frw)}</td>
                 <td className="px-4 py-2">{p.is_new ? "✓" : "—"}</td>
                 <td className="px-4 py-2">{p.active ? "✓" : "—"}</td>
@@ -159,6 +229,7 @@ export function AdminProducts() {
                     <Button size="sm" variant="ghost" onClick={() => setEditing({
                       id: p.id, name: p.name, description: p.description ?? "",
                       price_frw: p.price_frw, category: p.category, image_url: p.image_url,
+                      categories: (p.categories && p.categories.length > 0) ? p.categories : [p.category],
                       image_urls: (p as Product & { image_urls?: string[] }).image_urls ?? [],
                       is_new: p.is_new, active: p.active,
                     })}>
@@ -188,16 +259,58 @@ export function AdminProducts() {
                   <Input value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Category</Label>
-                  <Input
-                    list="category-suggestions"
-                    value={editing.category}
-                    onChange={(e) => setEditing({ ...editing, category: e.target.value })}
-                    placeholder="Pick or type a custom category"
-                  />
-                  <datalist id="category-suggestions">
-                    {CATEGORIES.map((c) => <option key={c} value={c} />)}
-                  </datalist>
+                  <Label>Categories <span className="text-xs font-normal text-muted-foreground">(select one or more, first is primary)</span></Label>
+                  <div className="flex flex-wrap gap-1.5 rounded-md border border-input p-2 min-h-10">
+                    {editing.categories.length === 0 && (
+                      <span className="text-xs text-muted-foreground">No categories selected</span>
+                    )}
+                    {editing.categories.map((c) => (
+                      <span key={c} className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs">
+                        {c}
+                        <button type="button" onClick={() => setEditing({
+                          ...editing,
+                          categories: editing.categories.filter((x) => x !== c),
+                        })} aria-label={`Remove ${c}`}>
+                          <X className="h-3 w-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {allCategoryOptions
+                      .filter((c) => !editing.categories.includes(c))
+                      .map((c) => (
+                        <button key={c} type="button"
+                          onClick={() => setEditing({ ...editing, categories: [...editing.categories, c] })}
+                          className="rounded-full border border-border px-2.5 py-0.5 text-xs text-muted-foreground hover:bg-accent">
+                          + {c}
+                        </button>
+                      ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <Input
+                      value={newCategory}
+                      onChange={(e) => setNewCategory(e.target.value)}
+                      placeholder="Add custom category"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          const v = newCategory.trim();
+                          if (v && !editing.categories.includes(v)) {
+                            setEditing({ ...editing, categories: [...editing.categories, v] });
+                            setNewCategory("");
+                          }
+                        }
+                      }}
+                    />
+                    <Button type="button" variant="outline" onClick={() => {
+                      const v = newCategory.trim();
+                      if (v && !editing.categories.includes(v)) {
+                        setEditing({ ...editing, categories: [...editing.categories, v] });
+                        setNewCategory("");
+                      }
+                    }}>Add</Button>
+                  </div>
                 </div>
                 <div className="space-y-1.5">
                   <Label>Price (FRW)</Label>

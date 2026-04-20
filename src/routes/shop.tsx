@@ -53,13 +53,20 @@ function ShopPage() {
 
   const allCategories = useMemo(() => {
     const set = new Set<string>(CATEGORIES);
-    products.forEach((p) => set.add(p.category));
+    products.forEach((p) => {
+      set.add(p.category);
+      const cats = (p as Product & { categories?: string[] }).categories;
+      cats?.forEach((c) => set.add(c));
+    });
     return Array.from(set);
   }, [products]);
 
   const filtered = useMemo(() => {
     let list = products;
-    if (category) list = list.filter((p) => p.category === category);
+    if (category) list = list.filter((p) => {
+      const cats = (p as Product & { categories?: string[] }).categories ?? [];
+      return p.category === category || cats.includes(category);
+    });
     if (query.trim()) {
       const needle = query.trim().toLowerCase();
       list = list.filter(

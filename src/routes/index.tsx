@@ -1,8 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { ArrowRight } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ArrowRight, Search, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { ProductCard } from "@/components/ProductCard";
 import { CATEGORIES } from "@/lib/format";
 import heroFallback from "@/assets/hero-workshop.jpg";
@@ -35,6 +36,7 @@ function HomePage() {
   const [loading, setLoading] = useState(true);
   const [galleryUrls, setGalleryUrls] = useState<string[]>([]);
   const [bgIndex, setBgIndex] = useState(0);
+  const [query, setQuery] = useState("");
 
   useEffect(() => {
     void supabase
@@ -69,6 +71,20 @@ function HomePage() {
 
   const newOnes = products.filter((p) => p.is_new).slice(0, 4);
   const heroImages = galleryUrls.length > 0 ? galleryUrls : [heroFallback];
+
+  const searchResults = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return [];
+    return products.filter((p) => {
+      const cats = (p as Product & { categories?: string[] }).categories ?? [];
+      return (
+        p.name.toLowerCase().includes(q) ||
+        (p.description ?? "").toLowerCase().includes(q) ||
+        p.category.toLowerCase().includes(q) ||
+        cats.some((c) => c.toLowerCase().includes(q))
+      );
+    });
+  }, [products, query]);
 
   return (
     <div>
@@ -111,9 +127,49 @@ function HomePage() {
                 <Link to="/gallery">View Gallery</Link>
               </Button>
             </div>
+            <div className="mt-8 relative max-w-lg">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search products…"
+                className="h-11 pl-9 pr-9 bg-card/80 backdrop-blur"
+              />
+              {query && (
+                <button
+                  type="button"
+                  onClick={() => setQuery("")}
+                  aria-label="Clear search"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground hover:bg-accent"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </section>
+
+      {query.trim() && (
+        <section className="container-page py-12">
+          <div className="mb-6">
+            <div className="accent-line mb-3" />
+            <h2 className="font-display text-2xl font-bold md:text-3xl">
+              Search results for "{query}"
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {searchResults.length} {searchResults.length === 1 ? "product" : "products"}
+            </p>
+          </div>
+          {searchResults.length === 0 ? (
+            <p className="py-12 text-center text-muted-foreground">No products match your search.</p>
+          ) : (
+            <div className="grid grid-cols-2 gap-5 md:grid-cols-4">
+              {searchResults.map((p) => <ProductCard key={p.id} product={p} />)}
+            </div>
+          )}
+        </section>
+      )}
 
       {/* NEW PRODUCTS */}
       {newOnes.length > 0 && (
