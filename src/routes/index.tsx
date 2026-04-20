@@ -36,6 +36,7 @@ function HomePage() {
   const [loading, setLoading] = useState(true);
   const [galleryUrls, setGalleryUrls] = useState<string[]>([]);
   const [bgIndex, setBgIndex] = useState(0);
+  const [query, setQuery] = useState("");
 
   useEffect(() => {
     void supabase
@@ -70,6 +71,20 @@ function HomePage() {
 
   const newOnes = products.filter((p) => p.is_new).slice(0, 4);
   const heroImages = galleryUrls.length > 0 ? galleryUrls : [heroFallback];
+
+  const searchResults = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return [];
+    return products.filter((p) => {
+      const cats = (p as Product & { categories?: string[] }).categories ?? [];
+      return (
+        p.name.toLowerCase().includes(q) ||
+        (p.description ?? "").toLowerCase().includes(q) ||
+        p.category.toLowerCase().includes(q) ||
+        cats.some((c) => c.toLowerCase().includes(q))
+      );
+    });
+  }, [products, query]);
 
   return (
     <div>
