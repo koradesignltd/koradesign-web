@@ -127,9 +127,49 @@ function HomePage() {
                 <Link to="/gallery">View Gallery</Link>
               </Button>
             </div>
+            <div className="mt-8 relative max-w-lg">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search products…"
+                className="h-11 pl-9 pr-9 bg-card/80 backdrop-blur"
+              />
+              {query && (
+                <button
+                  type="button"
+                  onClick={() => setQuery("")}
+                  aria-label="Clear search"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground hover:bg-accent"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </section>
+
+      {query.trim() && (
+        <section className="container-page py-12">
+          <div className="mb-6">
+            <div className="accent-line mb-3" />
+            <h2 className="font-display text-2xl font-bold md:text-3xl">
+              Search results for "{query}"
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {searchResults.length} {searchResults.length === 1 ? "product" : "products"}
+            </p>
+          </div>
+          {searchResults.length === 0 ? (
+            <p className="py-12 text-center text-muted-foreground">No products match your search.</p>
+          ) : (
+            <div className="grid grid-cols-2 gap-5 md:grid-cols-4">
+              {searchResults.map((p) => <ProductCard key={p.id} product={p} />)}
+            </div>
+          )}
+        </section>
+      )}
 
       {/* NEW PRODUCTS */}
       {newOnes.length > 0 && (
