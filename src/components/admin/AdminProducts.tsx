@@ -157,6 +157,38 @@ export function AdminProducts() {
         </Button>
       </div>
 
+      {/* Filters */}
+      <div className="mb-4 grid gap-3 md:grid-cols-[1fr_auto_auto]">
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={filterQuery}
+            onChange={(e) => setFilterQuery(e.target.value)}
+            placeholder="Search by name, description or category…"
+            className="pl-9"
+          />
+        </div>
+        <Select value={filterCategory} onValueChange={setFilterCategory}>
+          <SelectTrigger className="md:w-48"><SelectValue placeholder="Category" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All categories</SelectItem>
+            {allCategoryOptions.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v as typeof filterStatus)}>
+          <SelectTrigger className="md:w-40"><SelectValue placeholder="Status" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All</SelectItem>
+            <SelectItem value="active">Active</SelectItem>
+            <SelectItem value="inactive">Inactive</SelectItem>
+            <SelectItem value="new">New</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <p className="mb-3 text-xs text-muted-foreground">
+        Showing {filteredProducts.length} of {products.length}
+      </p>
+
       <div className="overflow-x-auto rounded-2xl border border-border">
         <table className="w-full text-sm">
           <thead className="bg-muted/50 text-left text-xs uppercase tracking-wider text-muted-foreground">
@@ -171,14 +203,14 @@ export function AdminProducts() {
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {products.length === 0 && (
+            {filteredProducts.length === 0 && (
               <tr>
                 <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
-                  No products yet. Click "New product" to add your first one.
+                  {products.length === 0 ? 'No products yet. Click "New product" to add your first one.' : "No products match your filters."}
                 </td>
               </tr>
             )}
-            {products.map((p) => (
+            {filteredProducts.map((p) => (
               <tr key={p.id} className="hover:bg-muted/30">
                 <td className="px-4 py-2">
                   <img src={p.image_url} alt="" width={48} height={48} className="h-12 w-12 rounded-md object-cover" />
@@ -186,7 +218,9 @@ export function AdminProducts() {
                 <td className="px-4 py-2 font-medium">
                   <Link to="/product/$id" params={{ id: p.id }} className="hover:underline">{p.name}</Link>
                 </td>
-                <td className="px-4 py-2 text-muted-foreground">{p.category}</td>
+                <td className="px-4 py-2 text-muted-foreground">
+                  {(p.categories && p.categories.length > 0 ? p.categories : [p.category]).join(", ")}
+                </td>
                 <td className="px-4 py-2">{formatFRW(p.price_frw)}</td>
                 <td className="px-4 py-2">{p.is_new ? "✓" : "—"}</td>
                 <td className="px-4 py-2">{p.active ? "✓" : "—"}</td>
