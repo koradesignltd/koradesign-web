@@ -1,7 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Search, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { ProductCard } from "@/components/ProductCard";
+import { Input } from "@/components/ui/input";
 import { CATEGORIES } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { Database } from "@/integrations/supabase/types";
@@ -10,11 +12,13 @@ type Product = Database["public"]["Tables"]["products"]["Row"];
 
 interface ShopSearch {
   category?: string;
+  q?: string;
 }
 
 export const Route = createFileRoute("/shop")({
   validateSearch: (search): ShopSearch => ({
     category: typeof search.category === "string" ? search.category : undefined,
+    q: typeof search.q === "string" ? search.q : undefined,
   }),
   head: () => ({
     meta: [
@@ -28,9 +32,12 @@ export const Route = createFileRoute("/shop")({
 });
 
 function ShopPage() {
-  const { category } = Route.useSearch();
+  const { category, q } = Route.useSearch();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useState(q ?? "");
+
+  useEffect(() => { setQuery(q ?? ""); }, [q]);
 
   useEffect(() => {
     void supabase
@@ -44,7 +51,26 @@ function ShopPage() {
       });
   }, []);
 
-  const filtered = category ? products.filter((p) => p.category === category) : products;
+  const allCategories = useMemo(() => {
+    const set = new Set<string>(CATEGORIES);
+    products.forEach((p) => set.add(p.category));
+    return Array.from(set);
+  }, [products]);
+
+  const filtered = useMemo(() => {
+    let list = products;
+    if (category) list = list.filter((p) => p.category === category);
+    if (query.trim()) {
+      const needle = query.trim().toLowerCase();
+      list = list.filter(
+        (p) =>
+          p.name.toLowerCase().includes(needle) ||
+          (p.description ?? "").toLowerCase().includes(needle) ||
+          p.category.toLowerCase().includes(needle),
+      );
+    }
+    return list;
+  }, [products, category, query]);
 
   return (
     <div className="container-page py-12 md:py-16">
@@ -54,7 +80,28 @@ function ShopPage() {
         <p className="mt-2 text-muted-foreground">
           {filtered.length} {filtered.length === 1 ? "product" : "products"}
           {category ? ` in ${category}` : ""}
+          {query ? ` matching "${query}"` : ""}
         </p>
+      </div>
+
+      <div className="mb-6 relative max-w-md">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search products by name, description or category…"
+          className="pl-9 pr-9"
+        />
+        {query && (
+          <button
+            type="button"
+            onClick={() => setQuery("")}
+            aria-label="Clear search"
+            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground hover:bg-accent"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
       </div>
 
       <div className="mb-8 flex flex-wrap gap-2">
@@ -67,7 +114,7 @@ function ShopPage() {
         >
           All
         </Link>
-        {CATEGORIES.map((c) => (
+        {allCategories.map((c) => (
           <Link
             key={c}
             to="/shop"
@@ -85,7 +132,7 @@ function ShopPage() {
       {loading ? (
         <p className="py-20 text-center text-muted-foreground">Loading…</p>
       ) : filtered.length === 0 ? (
-        <p className="py-20 text-center text-muted-foreground">No products in this category yet.</p>
+        <p className="py-20 text-center text-muted-foreground">No products found.</p>
       ) : (
         <div className="grid grid-cols-2 gap-5 md:grid-cols-3 lg:grid-cols-4">
           {filtered.map((p) => <ProductCard key={p.id} product={p} />)}

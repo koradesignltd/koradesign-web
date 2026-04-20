@@ -189,12 +189,15 @@ export function AdminProducts() {
                 </div>
                 <div className="space-y-1.5">
                   <Label>Category</Label>
-                  <Select value={editing.category} onValueChange={(v) => setEditing({ ...editing, category: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                  <Input
+                    list="category-suggestions"
+                    value={editing.category}
+                    onChange={(e) => setEditing({ ...editing, category: e.target.value })}
+                    placeholder="Pick or type a custom category"
+                  />
+                  <datalist id="category-suggestions">
+                    {CATEGORIES.map((c) => <option key={c} value={c} />)}
+                  </datalist>
                 </div>
                 <div className="space-y-1.5">
                   <Label>Price (FRW)</Label>
