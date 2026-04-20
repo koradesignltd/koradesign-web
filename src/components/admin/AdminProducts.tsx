@@ -259,16 +259,58 @@ export function AdminProducts() {
                   <Input value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Category</Label>
-                  <Input
-                    list="category-suggestions"
-                    value={editing.category}
-                    onChange={(e) => setEditing({ ...editing, category: e.target.value })}
-                    placeholder="Pick or type a custom category"
-                  />
-                  <datalist id="category-suggestions">
-                    {CATEGORIES.map((c) => <option key={c} value={c} />)}
-                  </datalist>
+                  <Label>Categories <span className="text-xs font-normal text-muted-foreground">(select one or more, first is primary)</span></Label>
+                  <div className="flex flex-wrap gap-1.5 rounded-md border border-input p-2 min-h-10">
+                    {editing.categories.length === 0 && (
+                      <span className="text-xs text-muted-foreground">No categories selected</span>
+                    )}
+                    {editing.categories.map((c) => (
+                      <span key={c} className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs">
+                        {c}
+                        <button type="button" onClick={() => setEditing({
+                          ...editing,
+                          categories: editing.categories.filter((x) => x !== c),
+                        })} aria-label={`Remove ${c}`}>
+                          <X className="h-3 w-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {allCategoryOptions
+                      .filter((c) => !editing.categories.includes(c))
+                      .map((c) => (
+                        <button key={c} type="button"
+                          onClick={() => setEditing({ ...editing, categories: [...editing.categories, c] })}
+                          className="rounded-full border border-border px-2.5 py-0.5 text-xs text-muted-foreground hover:bg-accent">
+                          + {c}
+                        </button>
+                      ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <Input
+                      value={newCategory}
+                      onChange={(e) => setNewCategory(e.target.value)}
+                      placeholder="Add custom category"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          const v = newCategory.trim();
+                          if (v && !editing.categories.includes(v)) {
+                            setEditing({ ...editing, categories: [...editing.categories, v] });
+                            setNewCategory("");
+                          }
+                        }
+                      }}
+                    />
+                    <Button type="button" variant="outline" onClick={() => {
+                      const v = newCategory.trim();
+                      if (v && !editing.categories.includes(v)) {
+                        setEditing({ ...editing, categories: [...editing.categories, v] });
+                        setNewCategory("");
+                      }
+                    }}>Add</Button>
+                  </div>
                 </div>
                 <div className="space-y-1.5">
                   <Label>Price (FRW)</Label>
