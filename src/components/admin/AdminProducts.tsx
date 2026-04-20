@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Pencil, Plus, Trash2, Upload, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Pencil, Plus, Search, Trash2, Upload, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +15,9 @@ import { CATEGORIES, formatFRW } from "@/lib/format";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 
-type Product = Database["public"]["Tables"]["products"]["Row"];
+type Product = Database["public"]["Tables"]["products"]["Row"] & {
+  categories?: string[];
+};
 
 const MAX_IMAGES = 5;
 
@@ -25,6 +27,7 @@ interface FormState {
   description: string;
   price_frw: number;
   category: string;
+  categories: string[];
   image_url: string;
   image_urls: string[];
   is_new: boolean;
@@ -33,7 +36,8 @@ interface FormState {
 
 const EMPTY: FormState = {
   name: "", description: "", price_frw: 15000,
-  category: CATEGORIES[0], image_url: "", image_urls: [], is_new: true, active: true,
+  category: CATEGORIES[0], categories: [CATEGORIES[0]],
+  image_url: "", image_urls: [], is_new: true, active: true,
 };
 
 export function AdminProducts() {
