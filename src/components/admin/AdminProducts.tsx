@@ -45,6 +45,37 @@ export function AdminProducts() {
   const [editing, setEditing] = useState<FormState | null>(null);
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [filterQuery, setFilterQuery] = useState("");
+  const [filterCategory, setFilterCategory] = useState<string>("all");
+  const [filterStatus, setFilterStatus] = useState<"all" | "active" | "inactive" | "new">("all");
+  const [newCategory, setNewCategory] = useState("");
+
+  const allCategoryOptions = useMemo(() => {
+    const set = new Set<string>(CATEGORIES);
+    products.forEach((p) => {
+      (p.categories ?? []).forEach((c) => set.add(c));
+      if (p.category) set.add(p.category);
+    });
+    return Array.from(set);
+  }, [products]);
+
+  const filteredProducts = useMemo(() => {
+    const q = filterQuery.trim().toLowerCase();
+    return products.filter((p) => {
+      if (filterStatus === "active" && !p.active) return false;
+      if (filterStatus === "inactive" && p.active) return false;
+      if (filterStatus === "new" && !p.is_new) return false;
+      if (filterCategory !== "all") {
+        const cats = p.categories ?? [];
+        if (p.category !== filterCategory && !cats.includes(filterCategory)) return false;
+      }
+      if (q) {
+        const hay = `${p.name} ${p.description ?? ""} ${p.category} ${(p.categories ?? []).join(" ")}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [products, filterQuery, filterCategory, filterStatus]);
 
   async function load() {
     const { data, error } = await supabase
