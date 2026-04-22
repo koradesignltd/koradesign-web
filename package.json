@@ -1,10 +1,10 @@
 {
-  "name": "tanstack_start_ts",
+  "name": "kora-design-spa",
   "private": true,
   "sideEffects": false,
   "type": "module",
   "scripts": {
-    "dev": "vite dev",
+    "dev": "vite",
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
