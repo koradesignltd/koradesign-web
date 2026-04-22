@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link } from "react-router-dom";
 import logo from "@/assets/kora-logo.png";
 import { SOCIALS } from "@/lib/social";
 

@@ -1,27 +1,14 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { Helmet } from "react-helmet-async";
 
-export const Route = createFileRoute("/about")({
-  head: () => ({
-    meta: [
-      { title: "About — Kora Design" },
-      {
-        name: "description",
-        content:
-          "Kora Design is a Rwandan studio crafting precision laser-cut wall art, signages and personalised gifts.",
-      },
-      { property: "og:title", content: "About — Kora Design" },
-      {
-        property: "og:description",
-        content: "Kora Design is a Rwandan studio crafting precision laser-cut wall art and gifts.",
-      },
-    ],
-  }),
-  component: AboutPage,
-});
-
-function AboutPage() {
+export default function AboutPage() {
   return (
     <div className="container-page py-16 md:py-24">
+      <Helmet>
+        <title>About — Kora Design</title>
+        <meta name="description" content="Kora Design is a Rwandan studio crafting precision laser-cut wall art, signages and personalised gifts." />
+        <meta property="og:title" content="About — Kora Design" />
+        <meta property="og:description" content="Kora Design is a Rwandan studio crafting precision laser-cut wall art and gifts." />
+      </Helmet>
       <div className="max-w-3xl">
         <div className="accent-line mb-3" />
         <h1 className="font-display text-4xl font-bold md:text-5xl">About Kora Design</h1>
@@ -51,12 +38,7 @@ function AboutPage() {
           <h2 className="font-display text-xl font-semibold">Get in touch</h2>
           <p className="mt-2 text-sm text-muted-foreground">
             WhatsApp:{" "}
-            <a
-              href="https://wa.me/250791446645"
-              target="_blank"
-              rel="noreferrer"
-              className="font-medium text-primary hover:underline"
-            >
+            <a href="https://wa.me/250791446645" target="_blank" rel="noreferrer" className="font-medium text-primary hover:underline">
               +250 791 446 645
             </a>
           </p>

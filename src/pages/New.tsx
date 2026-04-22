@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { Helmet } from "react-helmet-async";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ProductCard } from "@/components/ProductCard";
@@ -6,19 +6,7 @@ import type { Database } from "@/integrations/supabase/types";
 
 type Product = Database["public"]["Tables"]["products"]["Row"];
 
-export const Route = createFileRoute("/new")({
-  head: () => ({
-    meta: [
-      { title: "New Products — Kora Design" },
-      { name: "description", content: "Our newest laser-cut designs, freshly released." },
-      { property: "og:title", content: "New Products — Kora Design" },
-      { property: "og:description", content: "Our newest laser-cut designs, freshly released." },
-    ],
-  }),
-  component: NewPage,
-});
-
-function NewPage() {
+export default function NewPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -37,6 +25,12 @@ function NewPage() {
 
   return (
     <div className="container-page py-12 md:py-16">
+      <Helmet>
+        <title>New Products — Kora Design</title>
+        <meta name="description" content="Our newest laser-cut designs, freshly released." />
+        <meta property="og:title" content="New Products — Kora Design" />
+        <meta property="og:description" content="Our newest laser-cut designs, freshly released." />
+      </Helmet>
       <div className="mb-10">
         <div className="accent-line mb-3" />
         <h1 className="font-display text-4xl font-bold md:text-5xl">New Products</h1>

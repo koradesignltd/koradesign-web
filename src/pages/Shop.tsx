@@ -1,4 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { Link, useSearchParams } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { useEffect, useMemo, useState } from "react";
 import { Search, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,29 +11,11 @@ import type { Database } from "@/integrations/supabase/types";
 
 type Product = Database["public"]["Tables"]["products"]["Row"];
 
-interface ShopSearch {
-  category?: string;
-  q?: string;
-}
+export default function ShopPage() {
+  const [searchParams] = useSearchParams();
+  const category = searchParams.get("category") ?? undefined;
+  const q = searchParams.get("q") ?? undefined;
 
-export const Route = createFileRoute("/shop")({
-  validateSearch: (search): ShopSearch => ({
-    category: typeof search.category === "string" ? search.category : undefined,
-    q: typeof search.q === "string" ? search.q : undefined,
-  }),
-  head: () => ({
-    meta: [
-      { title: "Shop — Kora Design" },
-      { name: "description", content: "Browse all laser-cut wall art, signages, gifts and crafts from Kora Design." },
-      { property: "og:title", content: "Shop — Kora Design" },
-      { property: "og:description", content: "Browse all laser-cut wall art, signages, gifts and crafts." },
-    ],
-  }),
-  component: ShopPage,
-});
-
-function ShopPage() {
-  const { category, q } = Route.useSearch();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState(q ?? "");
@@ -81,6 +64,12 @@ function ShopPage() {
 
   return (
     <div className="container-page py-12 md:py-16">
+      <Helmet>
+        <title>Shop — Kora Design</title>
+        <meta name="description" content="Browse all laser-cut wall art, signages, gifts and crafts from Kora Design." />
+        <meta property="og:title" content="Shop — Kora Design" />
+        <meta property="og:description" content="Browse all laser-cut wall art, signages, gifts and crafts." />
+      </Helmet>
       <div className="mb-8">
         <div className="accent-line mb-3" />
         <h1 className="font-display text-4xl font-bold md:text-5xl">Shop</h1>
@@ -124,8 +113,7 @@ function ShopPage() {
         {allCategories.map((c) => (
           <Link
             key={c}
-            to="/shop"
-            search={{ category: c }}
+            to={`/shop?category=${encodeURIComponent(c)}`}
             className={cn(
               "rounded-full border border-border px-4 py-1.5 text-sm transition-colors hover:bg-accent",
               category === c && "bg-foreground text-background border-foreground hover:bg-foreground",

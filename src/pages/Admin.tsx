@@ -1,4 +1,5 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { Helmet } from "react-helmet-async";
+import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { useAuth } from "@/lib/auth";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -6,18 +7,13 @@ import { AdminProducts } from "@/components/admin/AdminProducts";
 import { AdminGallery } from "@/components/admin/AdminGallery";
 import { AdminCoupons } from "@/components/admin/AdminCoupons";
 
-export const Route = createFileRoute("/admin")({
-  head: () => ({ meta: [{ title: "Admin — Kora Design" }] }),
-  component: AdminPage,
-});
-
-function AdminPage() {
+export default function AdminPage() {
   const { user, isAdmin, loading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (!loading && (!user || !isAdmin)) {
-      void navigate({ to: "/login" });
+      navigate("/login");
     }
   }, [user, isAdmin, loading, navigate]);
 
@@ -26,6 +22,7 @@ function AdminPage() {
 
   return (
     <div className="container-page py-12">
+      <Helmet><title>Admin — Kora Design</title></Helmet>
       <div className="mb-8">
         <div className="accent-line mb-3" />
         <h1 className="font-display text-3xl font-bold md:text-4xl">Admin Dashboard</h1>

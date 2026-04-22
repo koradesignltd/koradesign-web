@@ -1,4 +1,5 @@
-import { createFileRoute, Link, notFound, useRouter } from "@tanstack/react-router";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { useEffect, useState } from "react";
 import { ArrowLeft, MessageCircle, ShoppingCart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,25 +10,16 @@ import type { Database } from "@/integrations/supabase/types";
 
 type Product = Database["public"]["Tables"]["products"]["Row"];
 
-export const Route = createFileRoute("/product/$id")({
-  component: ProductPage,
-  notFoundComponent: () => (
-    <div className="container-page py-24 text-center">
-      <h1 className="font-display text-3xl font-bold">Product not found</h1>
-      <Button asChild className="mt-6"><Link to="/shop">Back to shop</Link></Button>
-    </div>
-  ),
-});
-
-function ProductPage() {
-  const { id } = Route.useParams();
-  const router = useRouter();
+export default function ProductPage() {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { add, setOpen } = useCart();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeImage, setActiveImage] = useState<string>("");
 
   useEffect(() => {
+    if (!id) return;
     void supabase
       .from("products")
       .select("*")
@@ -44,7 +36,12 @@ function ProductPage() {
     return <div className="container-page py-24 text-center text-muted-foreground">Loading…</div>;
   }
   if (!product) {
-    throw notFound();
+    return (
+      <div className="container-page py-24 text-center">
+        <h1 className="font-display text-3xl font-bold">Product not found</h1>
+        <Button asChild className="mt-6"><Link to="/shop">Back to shop</Link></Button>
+      </div>
+    );
   }
 
   const extraImages = (product as Product & { image_urls?: string[] }).image_urls ?? [];
@@ -69,8 +66,15 @@ function ProductPage() {
 
   return (
     <div className="container-page py-10 md:py-16">
+      <Helmet>
+        <title>{product.name} — Kora Design</title>
+        <meta name="description" content={product.description ?? `${product.name} — laser-cut by Kora Design.`} />
+        <meta property="og:title" content={`${product.name} — Kora Design`} />
+        <meta property="og:description" content={product.description ?? `${product.name} — laser-cut by Kora Design.`} />
+        <meta property="og:image" content={product.image_url} />
+      </Helmet>
       <button
-        onClick={() => router.history.back()}
+        onClick={() => navigate(-1)}
         className="mb-6 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" /> Back

@@ -1,4 +1,5 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { Helmet } from "react-helmet-async";
+import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -7,14 +8,7 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/login")({
-  head: () => ({
-    meta: [{ title: "Admin Login — Kora Design" }],
-  }),
-  component: LoginPage,
-});
-
-function LoginPage() {
+export default function LoginPage() {
   const navigate = useNavigate();
   const { user, isAdmin, loading } = useAuth();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
@@ -24,7 +18,7 @@ function LoginPage() {
 
   useEffect(() => {
     if (!loading && user && isAdmin) {
-      void navigate({ to: "/admin" });
+      navigate("/admin");
     }
   }, [user, isAdmin, loading, navigate]);
 
@@ -56,6 +50,7 @@ function LoginPage() {
 
   return (
     <div className="container-page flex min-h-[70vh] items-center justify-center py-16">
+      <Helmet><title>Admin Login — Kora Design</title></Helmet>
       <div className="w-full max-w-md rounded-2xl border border-border bg-card p-8 shadow-soft">
         <div className="accent-line mb-3" />
         <h1 className="font-display text-2xl font-bold">
@@ -70,26 +65,11 @@ function LoginPage() {
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div className="space-y-1.5">
             <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              required
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
+            <Input id="email" type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              required
-              minLength={6}
-              autoComplete={mode === "signin" ? "current-password" : "new-password"}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
+            <Input id="password" type="password" required minLength={6} autoComplete={mode === "signin" ? "current-password" : "new-password"} value={password} onChange={(e) => setPassword(e.target.value)} />
           </div>
           <Button type="submit" className="w-full" disabled={busy}>
             {busy ? "Please wait…" : mode === "signin" ? "Sign in" : "Create account"}
@@ -101,9 +81,7 @@ function LoginPage() {
           onClick={() => setMode((m) => (m === "signin" ? "signup" : "signin"))}
           className="mt-4 w-full text-center text-sm text-muted-foreground hover:text-foreground"
         >
-          {mode === "signin"
-            ? "First time? Create the admin account"
-            : "Already have an account? Sign in"}
+          {mode === "signin" ? "First time? Create the admin account" : "Already have an account? Sign in"}
         </button>
       </div>
     </div>

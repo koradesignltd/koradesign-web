@@ -1,4 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { Link } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, Search, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,27 +12,7 @@ import type { Database } from "@/integrations/supabase/types";
 
 type Product = Database["public"]["Tables"]["products"]["Row"];
 
-export const Route = createFileRoute("/")({
-  head: () => ({
-    meta: [
-      { title: "Kora Design — Precision Laser-cut Wall Art" },
-      {
-        name: "description",
-        content:
-          "Discover our collection of precision laser-cut wall art designed for modern spaces. Shop wall art, signages, gifts and more from Kora Design.",
-      },
-      { property: "og:title", content: "Kora Design — Precision Laser-cut Wall Art" },
-      {
-        property: "og:description",
-        content:
-          "Discover our collection of precision laser-cut wall art designed for modern spaces.",
-      },
-    ],
-  }),
-  component: HomePage,
-});
-
-function HomePage() {
+export default function HomePage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [galleryUrls, setGalleryUrls] = useState<string[]>([]);
@@ -60,7 +41,6 @@ function HomePage() {
       });
   }, []);
 
-  // Cycle the hero background through gallery images
   useEffect(() => {
     if (galleryUrls.length <= 1) return;
     const id = setInterval(() => {
@@ -88,7 +68,12 @@ function HomePage() {
 
   return (
     <div>
-      {/* HERO */}
+      <Helmet>
+        <title>Kora Design — Precision Laser-cut Wall Art</title>
+        <meta name="description" content="Discover our collection of precision laser-cut wall art designed for modern spaces. Shop wall art, signages, gifts and more from Kora Design." />
+        <meta property="og:title" content="Kora Design — Precision Laser-cut Wall Art" />
+        <meta property="og:description" content="Discover our collection of precision laser-cut wall art designed for modern spaces." />
+      </Helmet>
       <section className="relative overflow-hidden">
         <div className="absolute inset-0">
           {heroImages.map((src, i) => (
@@ -171,7 +156,6 @@ function HomePage() {
         </section>
       )}
 
-      {/* NEW PRODUCTS */}
       {newOnes.length > 0 && (
         <section className="container-page py-16 md:py-24">
           <div className="mb-10 flex items-end justify-between gap-4">
@@ -190,7 +174,6 @@ function HomePage() {
         </section>
       )}
 
-      {/* CATEGORIES */}
       {CATEGORIES.map((cat) => {
         const list = products.filter((p) => p.category === cat).slice(0, 4);
         if (list.length === 0) return null;
@@ -202,8 +185,7 @@ function HomePage() {
                 <h2 className="font-display text-2xl font-bold md:text-3xl">{cat}</h2>
               </div>
               <Link
-                to="/shop"
-                search={{ category: cat }}
+                to={`/shop?category=${encodeURIComponent(cat)}`}
                 className="text-sm font-medium text-primary hover:underline"
               >
                 View all →

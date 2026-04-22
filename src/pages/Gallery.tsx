@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { Helmet } from "react-helmet-async";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -10,19 +10,7 @@ interface GalleryImage {
   caption: string | null;
 }
 
-export const Route = createFileRoute("/gallery")({
-  head: () => ({
-    meta: [
-      { title: "Gallery — Kora Design" },
-      { name: "description", content: "A look inside Kora Design — laser-cut craftsmanship, finished pieces and behind the scenes." },
-      { property: "og:title", content: "Gallery — Kora Design" },
-      { property: "og:description", content: "A look inside Kora Design — laser-cut craftsmanship and finished pieces." },
-    ],
-  }),
-  component: GalleryPage,
-});
-
-function GalleryPage() {
+export default function GalleryPage() {
   const [images, setImages] = useState<GalleryImage[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
@@ -53,6 +41,12 @@ function GalleryPage() {
 
   return (
     <div className="container-page py-12 md:py-16">
+      <Helmet>
+        <title>Gallery — Kora Design</title>
+        <meta name="description" content="A look inside Kora Design — laser-cut craftsmanship, finished pieces and behind the scenes." />
+        <meta property="og:title" content="Gallery — Kora Design" />
+        <meta property="og:description" content="A look inside Kora Design — laser-cut craftsmanship and finished pieces." />
+      </Helmet>
       <div className="mb-10">
         <div className="accent-line mb-3" />
         <h1 className="font-display text-4xl font-bold md:text-5xl">Gallery</h1>

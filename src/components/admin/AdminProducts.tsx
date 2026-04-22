@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Link } from "@tanstack/react-router";
+import { Link } from "react-router-dom";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -216,7 +216,7 @@ export function AdminProducts() {
                   <img src={p.image_url} alt="" width={48} height={48} className="h-12 w-12 rounded-md object-cover" />
                 </td>
                 <td className="px-4 py-2 font-medium">
-                  <Link to="/product/$id" params={{ id: p.id }} className="hover:underline">{p.name}</Link>
+                  <Link to={`/product/${p.id}`} className="hover:underline">{p.name}</Link>
                 </td>
                 <td className="px-4 py-2 text-muted-foreground">
                   {(p.categories && p.categories.length > 0 ? p.categories : [p.category]).join(", ")}

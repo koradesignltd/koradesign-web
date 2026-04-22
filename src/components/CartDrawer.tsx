@@ -5,7 +5,7 @@ import { Trash2, Plus, Minus, MessageCircle, Tag, X } from "lucide-react";
 import { useState } from "react";
 import { buildCartMessage, buildWhatsAppUrl, useCart } from "@/lib/cart";
 import { formatFRW, WHATSAPP_NUMBER } from "@/lib/format";
-import { Link } from "@tanstack/react-router";
+import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
