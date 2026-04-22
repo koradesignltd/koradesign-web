@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ShoppingCart } from "lucide-react";
 import { useCart } from "@/lib/cart";
@@ -24,8 +24,7 @@ export function ProductCard({ product }: { product: Product }) {
 
   return (
     <Link
-      to="/product/$id"
-      params={{ id: product.id }}
+      to={`/product/${product.id}`}
       className="card-elegant group flex flex-col overflow-hidden"
     >
       <div className="relative aspect-square overflow-hidden bg-muted">

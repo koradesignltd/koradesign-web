@@ -1,17 +1,18 @@
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { ShoppingCart, Menu, X, LayoutDashboard, LogOut } from "lucide-react";
 import { useState } from "react";
 import logo from "@/assets/kora-logo.png";
 import { useCart } from "@/lib/cart";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 const NAV = [
-  { to: "/", label: "Home" },
-  { to: "/shop", label: "Shop" },
-  { to: "/new", label: "New" },
-  { to: "/gallery", label: "Gallery" },
-  { to: "/about", label: "About" },
+  { to: "/", label: "Home", end: true },
+  { to: "/shop", label: "Shop", end: false },
+  { to: "/new", label: "New", end: false },
+  { to: "/gallery", label: "Gallery", end: false },
+  { to: "/about", label: "About", end: false },
 ] as const;
 
 export function SiteHeader() {
@@ -32,15 +33,19 @@ export function SiteHeader() {
 
         <nav className="hidden items-center gap-7 md:flex" aria-label="Primary">
           {NAV.map((n) => (
-            <Link
+            <NavLink
               key={n.to}
               to={n.to}
-              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-              activeProps={{ className: "text-foreground" }}
-              activeOptions={{ exact: n.to === "/" }}
+              end={n.end}
+              className={({ isActive }) =>
+                cn(
+                  "text-sm font-medium transition-colors hover:text-foreground",
+                  isActive ? "text-foreground" : "text-muted-foreground",
+                )
+              }
             >
               {n.label}
-            </Link>
+            </NavLink>
           ))}
         </nav>
 
@@ -49,7 +54,7 @@ export function SiteHeader() {
             <Button
               size="sm"
               variant="ghost"
-              onClick={() => navigate({ to: "/admin" })}
+              onClick={() => navigate("/admin")}
               className="hidden sm:inline-flex"
             >
               <LayoutDashboard className="mr-1.5 h-4 w-4" />
@@ -90,16 +95,20 @@ export function SiteHeader() {
         <div className="border-t border-border bg-background md:hidden">
           <nav className="container-page flex flex-col py-3" aria-label="Mobile">
             {NAV.map((n) => (
-              <Link
+              <NavLink
                 key={n.to}
                 to={n.to}
+                end={n.end}
                 onClick={() => setMobileOpen(false)}
-                className="rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                activeProps={{ className: "text-foreground bg-accent" }}
-                activeOptions={{ exact: n.to === "/" }}
+                className={({ isActive }) =>
+                  cn(
+                    "rounded-md px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-foreground",
+                    isActive ? "text-foreground bg-accent" : "text-muted-foreground",
+                  )
+                }
               >
                 {n.label}
-              </Link>
+              </NavLink>
             ))}
             {isAdmin && (
               <Link
